@@ -15,74 +15,47 @@ type QueueEntry = {
   time: string;
 };
 
-const farmer = {
-  name: "Anita Devi",
-  farmerId: "FMR-20481",
-  village: "Chandpur",
-  language: "Hindi",
+type ActiveBooking = {
+  bookingNumber: string;
+  centre: string;
+  crop: string;
+  date: string;
+  slot: string;
+  quantity: number;
+  token: string;
 };
 
-let currentToken = "HBL-A119";
-let nextTokenNumber = 127;
-let bookingNumber = "SQ-26032-481";
-let bookingStatus = "Confirmed";
+const farmer = {
+  name: "Signed-in farmer",
+  farmerId: "Your farmer ID",
+  village: "Your village",
+  language: "Preferred language",
+};
 
-const notifications = [
-  {
-    id: 1,
-    title: "Your booking is confirmed",
-    message: "HBL-A127 is reserved for today at 10:30 AM.",
-    time: "8 min ago",
-    unread: true,
-  },
-  {
-    id: 2,
-    title: "Queue moving smoothly",
-    message: "Your estimated wait is now 42 minutes.",
-    time: "24 min ago",
-    unread: true,
-  },
-  {
-    id: 3,
-    title: "Centre opens at 8:00 AM",
-    message: "Please carry your farmer ID and weighment slip.",
-    time: "Yesterday",
-    unread: false,
-  },
-];
+let nextTokenNumber = 127;
+let activeBooking: ActiveBooking | null = null;
 
 function queueEntries(): QueueEntry[] {
+  if (!activeBooking) return [];
   return [
-    { token: "HBL-A116", name: "Ramesh Kumar", status: "completed", time: "9:02 AM" },
-    { token: "HBL-A117", name: "Suresh Yadav", status: "completed", time: "9:18 AM" },
-    { token: "HBL-A118", name: "Meena Devi", status: "completed", time: "9:34 AM" },
-    { token: currentToken, name: "Rajendra Pal", status: "processing", time: "Now" },
-    { token: "HBL-A120", name: "Sunita Bai", status: "waiting", time: "9:58 AM" },
-    { token: "HBL-A121", name: "Devendra Singh", status: "waiting", time: "10:03 AM" },
-    { token: "HBL-A122", name: "Gopal Verma", status: "waiting", time: "10:07 AM" },
-    { token: "HBL-A123", name: "Sanjay Patel", status: "waiting", time: "10:12 AM" },
-    { token: "HBL-A124", name: "Lakshmi Bai", status: "waiting", time: "10:18 AM" },
-    { token: "HBL-A125", name: "Nitin Sharma", status: "waiting", time: "10:21 AM" },
-    { token: "HBL-A126", name: "Prakash Rao", status: "waiting", time: "10:26 AM" },
-    { token: "HBL-A127", name: "Anita Devi", status: "you", time: "10:30 AM" },
+    {
+      token: activeBooking.token,
+      name: "",
+      status: "you",
+      time: activeBooking.slot,
+    },
   ];
 }
 
 function liveQueue() {
   const entries = queueEntries();
-  const farmersAhead = Math.max(
-    0,
-    entries.findIndex((entry) => entry.status === "you") -
-      entries.findIndex((entry) => entry.token === currentToken) -
-      1,
-  );
   return GetLiveQueueResponse.parse({
-    centre: "Haritpur Block Centre",
-    currentlyServing: currentToken,
-    yourToken: "HBL-A127",
-    farmersAhead,
-    estimatedWait: farmersAhead * 6,
-    updatedAt: "Just now",
+    centre: activeBooking?.centre ?? "No centre selected",
+    currentlyServing: activeBooking?.token ?? "—",
+    yourToken: activeBooking?.token ?? "—",
+    farmersAhead: 0,
+    estimatedWait: 0,
+    updatedAt: activeBooking ? "Just now" : "Waiting for centre updates",
     entries,
   });
 }
@@ -93,20 +66,22 @@ router.get("/dashboard", (_req, res) => {
   res.json(
     GetFarmerDashboardResponse.parse({
       farmer,
-      booking: {
-        bookingNumber,
-        centre: "Haritpur Block Centre",
-        crop: "Wheat",
-        slot: "10:30 AM – 11:00 AM",
-        token: "HBL-A127",
-        queuePosition: 8,
-        farmersAhead: 6,
-        estimatedWait: 42,
-        status: bookingStatus,
-        paymentStatus: "Pending",
-      },
-      notifications,
-      stats: { farmersServed: 1284, averageWait: 18, paymentDue: 10616 },
+      booking: activeBooking
+        ? {
+            bookingNumber: activeBooking.bookingNumber,
+            centre: activeBooking.centre,
+            crop: activeBooking.crop,
+            slot: activeBooking.slot,
+            token: activeBooking.token,
+            queuePosition: 1,
+            farmersAhead: 0,
+            estimatedWait: 0,
+            status: "Confirmed",
+            paymentStatus: "Not started",
+          }
+        : null,
+      notifications: [],
+      stats: { farmersServed: 0, averageWait: 0, paymentDue: 0 },
     }),
   );
 });
@@ -118,9 +93,17 @@ router.get("/queue", (_req, res) => {
 router.post("/bookings", (req, res) => {
   const input = CreateBookingBody.parse(req.body);
   const token = `HBL-A${nextTokenNumber}`;
+  const bookingNumber = `SQ-${nextTokenNumber}`;
   nextTokenNumber += 1;
-  bookingNumber = `SQ-26032-${Math.floor(100 + Math.random() * 899)}`;
-  bookingStatus = "Confirmed";
+  activeBooking = {
+    bookingNumber,
+    centre: input.centre,
+    crop: input.crop,
+    date: input.date,
+    slot: input.slot,
+    quantity: input.quantity,
+    token,
+  };
   res.status(201).json(
     CreateBookingResponse.parse({
       bookingNumber,
@@ -131,40 +114,24 @@ router.post("/bookings", (req, res) => {
 });
 
 router.post("/queue/advance", (_req, res) => {
-  const numericToken = Number(currentToken.split("A")[1]);
-  currentToken = `HBL-A${numericToken + 1}`;
   res.json(AdvanceQueueResponse.parse(liveQueue()));
 });
 
 router.get("/admin/dashboard", (_req, res) => {
   res.json(
     GetAdminDashboardResponse.parse({
-      centre: "Haritpur Block Centre",
+      centre: activeBooking?.centre ?? "No centre selected",
       metrics: {
-        today: 42,
-        waiting: 8,
-        processing: 1,
-        completed: 33,
-        averageWait: 18,
-        procurement: 284640,
-        pendingPayments: 49680,
+        today: activeBooking ? 1 : 0,
+        waiting: activeBooking ? 1 : 0,
+        processing: 0,
+        completed: 0,
+        averageWait: 0,
+        procurement: 0,
+        pendingPayments: 0,
       },
-      throughput: [
-        { label: "8 AM", value: 3 },
-        { label: "9 AM", value: 8 },
-        { label: "10 AM", value: 14 },
-        { label: "11 AM", value: 19 },
-        { label: "12 PM", value: 24 },
-        { label: "1 PM", value: 30 },
-      ],
-      dailyBookings: [
-        { label: "Mon", value: 34 },
-        { label: "Tue", value: 42 },
-        { label: "Wed", value: 38 },
-        { label: "Thu", value: 46 },
-        { label: "Fri", value: 51 },
-        { label: "Sat", value: 42 },
-      ],
+      throughput: [],
+      dailyBookings: [],
     }),
   );
 });
