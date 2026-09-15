@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  time: string;
+  unread: boolean;
 }

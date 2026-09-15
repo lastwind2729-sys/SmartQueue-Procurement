@@ -1,22 +1,20 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: SmartQueue Procurement API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: smartqueue
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +22,72 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard:
+    get:
+      operationId: getFarmerDashboard
+      tags: [smartqueue]
+      summary: Get the current farmer dashboard
+      responses:
+        "200":
+          description: Farmer dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FarmerDashboard"
+  /queue:
+    get:
+      operationId: getLiveQueue
+      tags: [smartqueue]
+      summary: Get the live queue for a centre
+      responses:
+        "200":
+          description: Live queue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveQueue"
+  /bookings:
+    post:
+      operationId: createBooking
+      tags: [smartqueue]
+      summary: Create a procurement slot booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingInput"
+      responses:
+        "201":
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingConfirmation"
+  /queue/advance:
+    post:
+      operationId: advanceQueue
+      tags: [smartqueue]
+      summary: Call the next farmer in the queue
+      responses:
+        "200":
+          description: Updated queue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveQueue"
+  /admin/dashboard:
+    get:
+      operationId: getAdminDashboard
+      tags: [smartqueue]
+      summary: Get centre operations metrics
+      responses:
+        "200":
+          description: Admin dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDashboard"
 components:
   schemas:
     HealthStatus:
@@ -31,6 +95,128 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
-
+      required: [status]
+    FarmerDashboard:
+      type: object
+      required: [farmer, booking, notifications, stats]
+      properties:
+        farmer:
+          $ref: "#/components/schemas/Farmer"
+        booking:
+          anyOf:
+            - $ref: "#/components/schemas/Booking"
+            - type: "null"
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        stats:
+          $ref: "#/components/schemas/FarmerStats"
+    Farmer:
+      type: object
+      required: [name, farmerId, village, language]
+      properties:
+        name: { type: string }
+        farmerId: { type: string }
+        village: { type: string }
+        language: { type: string }
+    FarmerStats:
+      type: object
+      required: [farmersServed, averageWait, paymentDue]
+      properties:
+        farmersServed: { type: integer }
+        averageWait: { type: integer }
+        paymentDue: { type: number }
+    Booking:
+      type: object
+      required: [bookingNumber, centre, crop, slot, token, queuePosition, farmersAhead, estimatedWait, status, paymentStatus]
+      properties:
+        bookingNumber: { type: string }
+        centre: { type: string }
+        crop: { type: string }
+        slot: { type: string }
+        token: { type: string }
+        queuePosition: { type: integer }
+        farmersAhead: { type: integer }
+        estimatedWait: { type: integer }
+        status: { type: string }
+        paymentStatus: { type: string }
+    Notification:
+      type: object
+      required: [id, title, message, time, unread]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        message: { type: string }
+        time: { type: string }
+        unread: { type: boolean }
+    LiveQueue:
+      type: object
+      required: [centre, currentlyServing, yourToken, farmersAhead, estimatedWait, updatedAt, entries]
+      properties:
+        centre: { type: string }
+        currentlyServing: { type: string }
+        yourToken: { type: string }
+        farmersAhead: { type: integer }
+        estimatedWait: { type: integer }
+        updatedAt: { type: string }
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/QueueEntry"
+    QueueEntry:
+      type: object
+      required: [token, name, status, time]
+      properties:
+        token: { type: string }
+        name: { type: string }
+        status: { type: string }
+        time: { type: string }
+    BookingInput:
+      type: object
+      required: [centre, crop, date, slot, quantity]
+      properties:
+        centre: { type: string }
+        crop: { type: string }
+        date: { type: string }
+        slot: { type: string }
+        quantity: { type: number, minimum: 1 }
+    BookingConfirmation:
+      type: object
+      required: [bookingNumber, token, message]
+      properties:
+        bookingNumber: { type: string }
+        token: { type: string }
+        message: { type: string }
+    AdminDashboard:
+      type: object
+      required: [centre, metrics, throughput, dailyBookings]
+      properties:
+        centre: { type: string }
+        metrics:
+          $ref: "#/components/schemas/AdminMetrics"
+        throughput:
+          type: array
+          items:
+            $ref: "#/components/schemas/ThroughputPoint"
+        dailyBookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ThroughputPoint"
+    AdminMetrics:
+      type: object
+      required: [today, waiting, processing, completed, averageWait, procurement, pendingPayments]
+      properties:
+        today: { type: integer }
+        waiting: { type: integer }
+        processing: { type: integer }
+        completed: { type: integer }
+        averageWait: { type: integer }
+        procurement: { type: number }
+        pendingPayments: { type: number }
+    ThroughputPoint:
+      type: object
+      required: [label, value]
+      properties:
+        label: { type: string }
+        value: { type: number }
