@@ -1,0 +1,1 @@
+- [Supervisor state persistence](supervisor-state.md) — notices and slot delays are API-backed MVP state until durable auth/database work lands.

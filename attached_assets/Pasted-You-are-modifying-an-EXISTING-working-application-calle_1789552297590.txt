@@ -1,0 +1,1019 @@
+You are modifying an EXISTING working application called:
+
+"SmartQueue Procurement"
+
+Do NOT rebuild the application from scratch.
+
+First inspect the existing project structure, routes, components, database/schema, authentication, and current UI. Understand what is already working. Preserve working functionality and reuse existing components, styles, APIs, and database logic wherever practical.
+
+The application is being upgraded for our Smart India Hackathon project.
+
+==================================================
+MAIN PRODUCT CHANGE
+==================================================
+
+The application should become:
+
+FARMERCONNECT
+
+Tagline:
+
+"Book. Track. Get Procured."
+
+Replace the current "SmartQueue Procurement" branding everywhere:
+- browser title
+- navbar/header
+- logo text
+- login pages
+- dashboards
+- footer
+- page titles
+- metadata
+- loading screens
+- empty states
+- any visible existing branding
+
+Do not leave old SmartQueue Procurement branding in the user interface.
+
+==================================================
+CORE PRODUCT IDEA
+==================================================
+
+FarmerConnect is a procurement-centre management platform with TWO DISTINCT USER EXPERIENCES:
+
+1. FARMER
+2. SUPERVISOR
+
+These experiences must be clearly separated.
+
+FARMER:
+Simple, mobile-friendly, minimal, only information/actions a farmer needs.
+
+SUPERVISOR:
+Full operational dashboard for monitoring and controlling procurement-centre activities.
+
+Do not make the farmer dashboard look like an admin dashboard.
+
+==================================================
+STEP 1 — INSPECT EXISTING APPLICATION
+==================================================
+
+Before making changes:
+
+1. Inspect the existing folder structure.
+2. Identify the framework and libraries already being used.
+3. Identify current pages/routes.
+4. Identify current authentication implementation.
+5. Identify current database implementation.
+6. Identify current farmer functionality.
+7. Identify whether queue management already exists.
+8. Identify existing API/server actions.
+9. Identify reusable UI components.
+10. Identify existing demo/test data.
+
+Then modify the existing architecture rather than introducing unnecessary duplicate systems.
+
+Do NOT replace the current tech stack unless there is a clear technical reason.
+
+==================================================
+ROLE-BASED AUTHENTICATION
+==================================================
+
+Add/upgrade role-based authentication with:
+
+FARMER
+SUPERVISOR
+
+If an existing user/authentication system exists, extend it rather than replacing it.
+
+Create:
+
+/login
+
+The login page should allow users to sign in and then redirect according to role.
+
+Farmer -> /farmer/dashboard
+
+Supervisor -> /supervisor/dashboard
+
+Create a discreet "Supervisor Login" option on the public-facing login page.
+
+Add logout functionality.
+
+Protect routes at both frontend and backend/server level.
+
+A farmer must not be able to access supervisor functionality simply by typing a supervisor URL.
+
+A supervisor must not be shown the farmer dashboard after login.
+
+==================================================
+FARMER EXPERIENCE
+==================================================
+
+The farmer UI should be simple enough for a first-time smartphone user.
+
+Farmer navigation:
+
+Home
+Book Slot
+My Booking
+Live Queue
+Status
+Notifications
+Profile
+
+Do NOT show:
+- complex analytics
+- administrative charts
+- centre management
+- slot management
+- procurement administration
+- payment administration
+- supervisor controls
+
+==================================================
+FARMER DASHBOARD
+==================================================
+
+Keep the dashboard focused on the next useful action.
+
+Display:
+
+Hello, [Farmer Name]
+
+UPCOMING PROCUREMENT
+
+Centre
+Booking Date
+Time
+Token
+Booking Status
+
+Example:
+
+Hubballi Procurement Centre
+18 September 2026
+10:30 AM
+Token: HBL-A127
+Status: Confirmed
+
+Then prominently show:
+
+Farmers Ahead
+8
+
+Estimated Waiting Time
+42 minutes
+
+Buttons:
+
+[View Live Queue]
+[View Booking]
+
+Below this, show compact cards for:
+
+Procurement Status
+Payment Status
+Latest Notification
+
+Keep this page visually clean.
+
+==================================================
+FARMER BOOK SLOT
+==================================================
+
+The existing booking functionality should be improved rather than removed.
+
+Flow:
+
+Select Procurement Centre
+Select Crop
+Enter Expected Quantity
+Select Date
+Select Time Slot
+Confirm Booking
+
+Show capacity clearly:
+
+09:00 - 09:30
+7 / 10 slots available
+
+09:30 - 10:00
+3 / 10 slots available
+
+10:00 - 10:30
+FULL
+
+Prevent booking when capacity is reached.
+
+After booking, generate/show:
+
+Booking ID
+Token
+Centre
+Date
+Time
+Crop
+Expected Quantity
+
+Use a clear confirmation screen.
+
+==================================================
+FARMER LIVE QUEUE
+==================================================
+
+This is one of the MAIN FEATURES.
+
+Create or improve:
+
+/farmer/queue
+
+Show:
+
+YOUR TOKEN
+HBL-A127
+
+CURRENTLY SERVING
+HBL-A119
+
+FARMERS AHEAD
+8
+
+ESTIMATED WAIT
+42 minutes
+
+Show the queue visually.
+
+Example:
+
+A119   Processing
+A120   Completed
+A121   Completed
+A122   Completed
+A123   Waiting
+A124   Waiting
+A125   Waiting
+A126   Waiting
+A127   YOU
+
+The farmer should NOT need to refresh manually.
+
+Use the existing realtime/database mechanism if one already exists.
+
+When a supervisor advances the queue, the farmer's screen should update automatically.
+
+==================================================
+FARMER STATUS
+==================================================
+
+Create a simple progress timeline:
+
+Booking Confirmed
+      ✓
+
+Arrived
+      ✓
+
+Processing
+      ●
+
+Procurement Completed
+      ○
+
+Payment
+      ○
+
+Use statuses appropriate to the actual booking state.
+
+==================================================
+FARMER NOTIFICATIONS
+==================================================
+
+Create/improve:
+
+/farmer/notifications
+
+Notifications should include events such as:
+
+"Your procurement slot has been confirmed."
+
+"Your token HBL-A127 is approaching."
+
+"Your procurement slot has been delayed by 30 minutes."
+
+"Your procurement has been completed."
+
+"Your payment of ₹10,616 has been processed."
+
+Show:
+- unread state
+- timestamp
+- notification type
+
+==================================================
+SUPERVISOR EXPERIENCE
+==================================================
+
+Create a completely separate supervisor interface.
+
+Routes:
+
+/supervisor/dashboard
+/supervisor/queue
+/supervisor/slots
+/supervisor/bookings
+/supervisor/procurement
+/supervisor/payments
+/supervisor/notices
+/supervisor/reports
+/supervisor/settings
+
+If some of these already exist, adapt them instead of duplicating them.
+
+Supervisor navigation should contain:
+
+Dashboard
+Live Queue
+Bookings
+Slots
+Procurement
+Payments
+Notices
+Reports
+Settings
+
+==================================================
+SUPERVISOR DASHBOARD
+==================================================
+
+Create a professional operations dashboard.
+
+Top KPI cards:
+
+Today's Bookings
+Waiting
+Processing
+Completed
+No Shows
+Average Waiting Time
+
+Then show:
+
+LIVE PROCUREMENT QUEUE
+
+Columns:
+
+Token
+Farmer
+Crop
+Scheduled Time
+Queue Position
+Status
+Actions
+
+Example:
+
+HBL-A123 | Ravi Kumar | Rice | 10:00 | 1 | Processing
+HBL-A124 | Suresh | Wheat | 10:15 | 2 | Waiting
+HBL-A125 | Kumar | Rice | 10:30 | 3 | Waiting
+
+Provide useful search/filter controls.
+
+Filters:
+- date
+- status
+- crop
+- slot
+- farmer
+
+==================================================
+SUPERVISOR QUEUE CONTROLS
+==================================================
+
+The supervisor must be able to:
+
+- Call Next
+- Mark Arrived
+- Start Procurement
+- Complete Procurement
+- Mark No Show
+- View Farmer Details
+
+When "Call Next" is selected:
+
+1. Update the current queue state.
+2. Promote the next waiting farmer.
+3. Update queue positions.
+4. Update affected farmer's Live Queue screen.
+5. Generate a notification where appropriate.
+
+Do not use fake front-end-only state.
+
+Persist state in the application's actual database/backend.
+
+==================================================
+IMPORTANT FEATURE — DELAY / RESCHEDULE SLOTS
+==================================================
+
+This MUST be implemented.
+
+Supervisors must be able to delay a procurement slot when required.
+
+Create a visible button/action:
+
+"Delay Slot"
+
+On the slot or booking management interface.
+
+Options:
+
+Delay by 15 minutes
+Delay by 30 minutes
+Delay by 1 hour
+Custom delay
+Change to specific time
+
+For custom changes allow supervisor to select:
+New Start Time
+New End Time
+
+Require a delay reason.
+
+Example:
+
+Reason:
+"High queue volume"
+
+Confirmation dialog:
+
+"Delay this slot?"
+
+Original:
+10:30 AM
+
+New:
+11:00 AM
+
+Reason:
+High queue volume
+
+Buttons:
+
+[Cancel]
+[Confirm Delay]
+
+==================================================
+SLOT DELAY BEHAVIOUR
+==================================================
+
+When a supervisor delays a slot:
+
+1. Persist the new time in the database.
+2. Preserve the original scheduled time.
+3. Record the delay duration.
+4. Record the delay reason.
+5. Record which supervisor changed it.
+6. Record the date/time of the change.
+7. Update all affected bookings.
+8. Update affected farmer dashboards.
+9. Update farmer booking details.
+10. Create a notification for affected farmers.
+11. Clearly display "Delayed" status.
+
+Example farmer notification:
+
+"Your procurement slot has been delayed.
+
+Original time:
+10:30 AM
+
+New time:
+11:00 AM
+
+Reason:
+High queue volume."
+
+Do not simply change the visible time without recording the change.
+
+==================================================
+SUPERVISOR SLOT MANAGEMENT
+==================================================
+
+Create/improve:
+
+/supervisor/slots
+
+Display:
+
+Date
+Time
+Centre
+Capacity
+Booked
+Available
+Status
+
+Actions:
+
+Edit
+Delay
+Disable
+View Bookings
+
+Add:
+
+[Create New Slot]
+
+Allow supervisors to create future slots.
+
+Do not allow a slot's booked count to exceed capacity.
+
+==================================================
+NOTICE / ANNOUNCEMENT MANAGEMENT
+==================================================
+
+Create:
+
+/supervisor/notices
+
+Supervisors need a dedicated place to create notices that will appear on the PUBLIC HOME PAGE.
+
+Allow:
+
+Create Notice
+Edit Notice
+Delete Notice
+Publish
+Unpublish
+
+Fields:
+
+Title
+Message
+Priority
+Start Date
+Expiry Date
+Published
+
+Priority levels:
+
+Normal
+Important
+Urgent
+
+Example:
+
+Title:
+Procurement Centre Timing Update
+
+Message:
+"Due to maintenance, procurement at Hubballi Centre will begin at 11:00 AM tomorrow."
+
+==================================================
+PUBLIC HOMEPAGE NOTICE
+==================================================
+
+Add a professional notice/announcement section to the homepage.
+
+The homepage must load notices dynamically from the database.
+
+Only show notices where:
+- published = true
+- current date is inside the notice's active date range
+- notice has not expired
+
+Show the highest-priority active notice prominently.
+
+Example:
+
+IMPORTANT NOTICE
+
+Procurement at Hubballi Centre will begin at 11:00 AM tomorrow due to maintenance.
+
+[View Details]
+
+Do not hard-code the notice.
+
+When a supervisor creates/edits/publishes a notice, the homepage should reflect the change.
+
+==================================================
+SUPERVISOR PROCUREMENT MANAGEMENT
+==================================================
+
+Create/improve:
+
+/supervisor/procurement
+
+Display:
+
+Farmer
+Token
+Crop
+Expected Quantity
+Actual Quantity
+Quality Grade
+Rate
+Total Amount
+Status
+
+Allow supervisor to enter:
+
+Actual Quantity
+Quality Grade
+Rate per unit
+
+Calculate:
+
+Total Amount = Actual Quantity × Rate per Unit
+
+On completion:
+
+- booking -> completed
+- queue token -> completed
+- procurement record -> completed
+- payment record -> pending
+- farmer notification -> created
+
+==================================================
+SUPERVISOR PAYMENT MANAGEMENT
+==================================================
+
+Create/improve:
+
+/supervisor/payments
+
+Display:
+
+Farmer
+Booking
+Procurement
+Amount
+Payment Status
+Transaction Reference
+Date
+
+Allow status:
+
+Pending
+Processing
+Paid
+Failed
+
+When marked Paid:
+
+- persist payment status
+- record paid timestamp
+- generate farmer notification
+
+==================================================
+REPORTS / ANALYTICS
+==================================================
+
+Keep analytics on the supervisor side only.
+
+Show:
+
+- bookings per day
+- completed procurement
+- average waiting time
+- procurement quantity
+- payment totals
+- pending payments
+- no-show count
+
+Use existing charting library if already present.
+
+Do not overload the farmer dashboard with analytics.
+
+==================================================
+DATABASE / DATA MODEL
+==================================================
+
+Inspect the existing database first.
+
+Only add tables/fields that are actually required.
+
+The data model should support:
+
+profiles/users
+farmers
+supervisors
+procurement_centres
+crops
+slots
+bookings
+queue_tokens
+procurements
+payments
+notifications
+notices
+slot_delays
+
+For slot delays, retain:
+
+id
+slot_id
+booking_id where applicable
+original_start_time
+original_end_time
+new_start_time
+new_end_time
+delay_minutes
+reason
+changed_by
+created_at
+
+For notices retain:
+
+id
+title
+message
+priority
+published
+start_date
+expiry_date
+created_by
+created_at
+updated_at
+
+Do NOT destroy existing data.
+
+Use migrations for schema changes where appropriate.
+
+==================================================
+SECURITY
+==================================================
+
+Implement real role-based access control.
+
+Farmer:
+- sees only own bookings
+- own queue
+- own procurement
+- own payments
+- own notifications
+
+Supervisor:
+- sees/manages their assigned procurement centre
+- can manage its queue, bookings, slots, procurement, notices and payments
+
+Do not rely only on hiding buttons in the UI.
+
+Protect server/API/database operations as well.
+
+Never expose secret/service-role credentials to the client.
+
+==================================================
+MOBILE UX
+==================================================
+
+The farmer experience is especially important.
+
+Optimize farmer pages for mobile.
+
+Use:
+- large touch-friendly buttons
+- readable text
+- clear status colours
+- simple cards
+- minimal forms
+- short labels
+- obvious actions
+
+Supervisor pages may be denser on desktop.
+
+==================================================
+VISUAL DESIGN
+==================================================
+
+Brand:
+
+FarmerConnect
+
+Tagline:
+
+Book. Track. Get Procured.
+
+Design direction:
+
+Modern
+Clean
+Trustworthy
+Agriculture/public-service oriented
+Professional enough for SIH judging
+
+Use:
+- green primary colour
+- blue secondary colour
+- yellow/orange warning accent
+- light neutral background
+- rounded cards
+- subtle shadows
+- clear status badges
+- Lucide icons if already installed / appropriate
+
+Do not make it look like an overly flashy startup landing page.
+
+==================================================
+PUBLIC HOMEPAGE
+==================================================
+
+Update the existing homepage rather than throwing away useful sections.
+
+Recommended structure:
+
+HEADER
+
+FarmerConnect
+
+Navigation:
+How It Works
+Find Centre
+Help
+Login
+
+Include discreet:
+Supervisor Login
+
+HERO
+
+"Book Your Procurement Slot.
+Skip the Long Queue."
+
+Subtitle:
+
+"Book a slot, track your queue in real time, and monitor your procurement and payment status."
+
+Buttons:
+
+[Book a Slot]
+[Track My Booking]
+
+NOTICE SECTION
+
+Dynamic active notices created by supervisors.
+
+HOW IT WORKS
+
+1. Register
+2. Book Slot
+3. Track Queue
+4. Complete Procurement
+
+FEATURES
+
+Slot Booking
+Live Queue
+Notifications
+Procurement Tracking
+Payment Tracking
+
+FOOTER
+
+FarmerConnect
+Book. Track. Get Procured.
+
+==================================================
+DEMO DATA
+==================================================
+
+Preserve existing demo data if useful.
+
+If demo data is missing, add realistic sample data.
+
+Include:
+- 3 procurement centres
+- 5 crops
+- future time slots
+- multiple farmers
+- multiple bookings
+- live queue states
+- at least one delayed slot
+- procurement records
+- payments
+- several notifications
+- at least two active homepage notices
+
+Create a supervisor demo account and farmer demo account.
+
+Document credentials in README.
+
+==================================================
+CRITICAL END-TO-END DEMO
+==================================================
+
+The following workflow MUST work using the application's real backend/database:
+
+FARMER:
+
+1. Login as farmer.
+2. Book 10:30 AM procurement slot.
+3. Receive token HBL-A127.
+4. See 8 farmers ahead.
+5. View live queue.
+
+SUPERVISOR:
+
+6. Login separately as supervisor.
+7. Open supervisor dashboard.
+8. See HBL-A127 in the queue.
+9. Click Call Next.
+10. Queue updates.
+
+FARMER:
+
+11. Farmer's queue position changes automatically.
+
+SUPERVISOR:
+
+12. Open Slots.
+13. Select farmer's slot.
+14. Click Delay Slot.
+15. Choose 30 minutes.
+16. Enter reason "High queue volume".
+17. Confirm.
+
+FARMER:
+
+18. Farmer immediately sees:
+"Slot Delayed"
+New time: 11:00 AM
+Reason: High queue volume
+
+SUPERVISOR:
+
+19. Process the farmer.
+20. Enter actual quantity.
+21. Enter rate.
+22. Complete procurement.
+23. Payment record becomes Pending.
+
+SUPERVISOR:
+
+24. Mark payment Paid.
+
+FARMER:
+
+25. Farmer sees:
+Procurement Completed
+Payment Paid
+
+This workflow should be reliable enough for a live SIH demonstration.
+
+==================================================
+DO NOT DO THESE THINGS
+==================================================
+
+Do NOT:
+- rebuild from zero
+- delete working functionality unnecessarily
+- replace the database without reason
+- create fake buttons that do nothing
+- use only frontend state for critical operations
+- expose supervisor functionality to farmers
+- show complex admin information on farmer pages
+- hard-code homepage notices
+- hard-code queue states
+- hard-code slot delays
+- remove existing useful functionality simply to simplify the code
+
+==================================================
+FINAL CHECK
+==================================================
+
+After implementation:
+
+1. Run the application.
+2. Fix build errors.
+3. Fix TypeScript errors.
+4. Fix routing errors.
+5. Fix authentication errors.
+6. Verify farmer login.
+7. Verify supervisor login.
+8. Verify role-based route protection.
+9. Verify booking.
+10. Verify queue update.
+11. Verify slot delay.
+12. Verify farmer notification after delay.
+13. Verify supervisor notice creation.
+14. Verify notice appears on homepage.
+15. Verify procurement completion.
+16. Verify payment update.
+17. Verify responsive mobile UI.
+18. Verify there are no broken navigation links.
+
+Finally, update README with:
+- project overview
+- user roles
+- routes
+- demo credentials
+- database changes
+- environment variables
+- how to run
+- how to demonstrate the complete farmer -> supervisor -> procurement -> payment workflow
+
+Most importantly:
+
+DO NOT JUST MAKE THE UI LOOK CORRECT.
+
+Make the underlying interactions work with the existing application's real data/backend.
