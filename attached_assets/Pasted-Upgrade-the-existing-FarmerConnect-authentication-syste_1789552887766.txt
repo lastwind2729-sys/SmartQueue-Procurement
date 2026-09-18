@@ -1,0 +1,152 @@
+Upgrade the existing FarmerConnect authentication system to implement secure role-based identity verification.
+
+IMPORTANT:
+Do not rebuild the application.
+Inspect the existing authentication/database implementation and modify it.
+
+FARMER VERIFICATION
+
+Create an official farmer registry.
+
+A farmer must NOT be able to create an account using an arbitrary farmer ID.
+
+Create/extend a farmers table with:
+
+farmer_id
+profile_id
+full_name
+registered_mobile
+village
+district
+verification_status
+verified_at
+
+During farmer registration/login:
+
+1. Farmer enters Farmer ID.
+2. Backend checks whether Farmer ID exists in the official farmer registry.
+3. Check that the provided registered mobile number matches the farmer record.
+4. Only allow the process to continue if:
+   - farmer_id exists
+   - mobile number matches
+   - verification_status = VERIFIED
+5. Send OTP to the registered mobile number.
+6. Only create/login the account after successful OTP verification.
+
+For the SIH prototype, if a real SMS provider is not configured, create a clearly marked development OTP mode, but keep the verification logic server-side.
+
+Never trust a farmer_id supplied by the frontend.
+
+SUPERVISOR VERIFICATION
+
+There must be NO public supervisor registration.
+
+Supervisor accounts must be provisioned by an authorized administrator or seeded into the database.
+
+Create/extend a supervisors table containing:
+
+employee_id
+profile_id
+official_email
+phone
+centre_id
+verification_status
+created_at
+created_by
+
+Supervisor login should require:
+
+Employee ID
+Password
+OTP if supported by the existing authentication architecture
+
+The backend must verify:
+
+- employee_id exists
+- supervisor is active/verified
+- account is not suspended
+- role is supervisor
+
+Do not rely only on hiding UI elements.
+
+ROLE-BASED ACCESS
+
+Farmer:
+- may access only their own bookings, queue, procurement, payments and notifications.
+
+Supervisor:
+- may access only their assigned procurement centre.
+
+Super Admin:
+- may access all centres.
+
+A supervisor assigned to centre HBL-001 must NOT be able to access or modify HBL-002 data.
+
+Implement this at the server/database level.
+
+SUPERVISOR ROUTE SECURITY
+
+Protect:
+ /supervisor/*
+ /admin/*
+
+A farmer must receive an authorization error or redirect if they attempt to access these routes directly.
+
+DATABASE SECURITY
+
+If using Supabase:
+- enable appropriate Row Level Security
+- enforce ownership checks
+- enforce supervisor centre restrictions
+- never expose service-role keys to the browser
+
+DEMO DATA
+
+Seed:
+
+5 verified farmers
+
+3 active supervisors
+
+3 procurement centres
+
+Make the demo credentials available in README.
+
+Example:
+
+Farmer:
+FRM-KAR-10001
+
+Supervisor:
+SUP-HBL-0001
+
+IMPORTANT:
+
+Do NOT implement fake identity verification by simply checking whether the ID matches a pattern.
+
+The farmer ID must be checked against the farmer registry table.
+
+The supervisor employee ID must be checked against the supervisor registry.
+
+Add clear error messages:
+
+"Farmer ID not found in the verified registry."
+
+"Mobile number does not match the registered farmer."
+
+"Supervisor account not found."
+
+"Supervisor account is not active."
+
+"Your account does not have permission to access this centre."
+
+Finally test:
+1. Valid farmer login
+2. Invalid farmer ID
+3. Valid farmer ID + wrong mobile
+4. Valid farmer + wrong OTP
+5. Valid supervisor login
+6. Invalid supervisor ID
+7. Farmer attempting /supervisor/dashboard
+8. Supervisor attempting another centre's data
+9. Successful authorized supervisor access
