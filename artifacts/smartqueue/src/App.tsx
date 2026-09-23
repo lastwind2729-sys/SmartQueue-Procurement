@@ -318,11 +318,269 @@ function AuthPage({ mode, role = 'farmer' }: { mode: 'login' | 'register'; role?
   const [farmerId, setFarmerId] = useState('');
   const [language, setLanguage] = useState('English');
   const [loading, setLoading] = useState(false);
-  const submit = (event: FormEvent) => { event.preventDefault(); setLoading(true); window.sessionStorage.setItem('smartqueue-session', 'active'); window.sessionStorage.setItem('farmerconnect-role', role); setTimeout(() => setLocation(role === 'supervisor' ? '/supervisor/dashboard' : '/farmer/dashboard'), 500); };
-  return <div className="grain grid min-h-[100dvh] bg-background lg:grid-cols-[.85fr_1.15fr]">
-    <div className="relative hidden overflow-hidden bg-sidebar p-10 text-sidebar-foreground lg:flex lg:flex-col lg:justify-between"><div className="hero-grid absolute inset-0 opacity-60" /><div className="relative"><Logo dark /><div className="mt-28 max-w-md"><p className="text-[11px] font-bold uppercase tracking-[.18em] text-secondary">A clearer day starts here</p><h1 className="mt-4 font-display text-5xl font-bold leading-[1.05] tracking-[-.045em]">Know your place. Keep your time.</h1><p className="mt-6 text-base leading-7 text-sidebar-foreground/65">Your booking, live queue, and payment status — together, in a language that respects your day.</p></div></div><div className="relative flex gap-3 text-xs text-sidebar-foreground/55"><ShieldCheck size={16} className="text-secondary" /> Secure farmer access · Built for public procurement</div></div>
-     <div className="flex flex-col px-5 py-6 sm:px-10 lg:px-20"><div className="flex items-center justify-between lg:justify-end"><div className="lg:hidden"><Logo /></div><Link href="/" className="text-sm font-semibold text-muted-foreground hover:text-foreground" data-testid="link-auth-home">Back to home</Link></div><div className="mx-auto flex w-full max-w-[480px] flex-1 flex-col justify-center py-12"><p className="text-[11px] font-bold uppercase tracking-[.18em] text-accent">{role === 'supervisor' ? 'Supervisor access' : mode === 'login' ? 'Welcome back' : 'Farmer onboarding'}</p><h1 className="mt-3 font-display text-4xl font-bold tracking-[-.04em]">{role === 'supervisor' ? 'Open the centre desk.' : mode === 'login' ? 'Sign in to your day.' : 'Start with your farmer ID.'}</h1><p className="mt-3 text-sm leading-6 text-muted-foreground">{role === 'supervisor' ? 'Monitor bookings, manage slots, and keep farmers informed.' : mode === 'login' ? 'Pick up exactly where you left off.' : 'It takes less than a minute. Your details stay with your centre.'}</p><form className="mt-9 space-y-5" onSubmit={submit}>{mode === 'register' && <label className="block"><span className="mb-2 block text-sm font-semibold">Your name</span><input value={name} onChange={(e) => setName(e.target.value)} required className="h-12 w-full rounded-xl border border-input bg-card px-4 text-sm outline-none ring-primary/20 transition focus:ring-4" placeholder="As on your farmer ID" data-testid="input-name" /></label>}<label className="block"><span className="mb-2 block text-sm font-semibold">{role === 'supervisor' ? 'Supervisor ID' : 'Farmer ID'}</span><input value={farmerId} onChange={(e) => setFarmerId(e.target.value)} required className="h-12 w-full rounded-xl border border-input bg-card px-4 font-mono text-sm uppercase outline-none ring-primary/20 transition focus:ring-4" placeholder={role === 'supervisor' ? 'Your supervisor ID' : 'Your registered farmer ID'} data-testid="input-farmer-id" /></label>{mode === 'register' && <label className="block"><span className="mb-2 block text-sm font-semibold">Preferred language</span><select value={language} onChange={(e) => setLanguage(e.target.value)} className="h-12 w-full rounded-xl border border-input bg-card px-4 text-sm outline-none ring-primary/20 transition focus:ring-4" data-testid="select-language"><option>English</option><option>ಕನ್ನಡ</option><option>हिन्दी</option><option>मराठी</option></select></label>}<Button type="submit" className="h-12 w-full" disabled={loading} data-testid="button-auth-submit">{loading ? <LoaderCircle className="animate-spin" size={17} /> : role === 'supervisor' ? 'Open supervisor dashboard' : mode === 'login' ? 'Continue to my overview' : 'Create my farmer access'}<ArrowRight size={16} /></Button></form><p className="mt-8 text-center text-sm text-muted-foreground">{role === 'supervisor' ? 'Farmer access?' : mode === 'login' ? 'New to FarmerConnect?' : 'Already have access?'} <Link href={role === 'supervisor' ? '/login' : mode === 'login' ? '/register' : '/login'} className="font-bold text-primary hover:underline" data-testid="link-auth-switch">{role === 'supervisor' ? 'Go to farmer login' : mode === 'login' ? 'Register here' : 'Sign in instead'}</Link></p>{role !== 'supervisor' && mode === 'login' && <p className="mt-4 text-center text-xs text-muted-foreground">Centre team? <Link href="/supervisor-login" className="font-semibold text-primary hover:underline" data-testid="link-supervisor-login">Supervisor login</Link></p>}<div className="mt-10 flex items-start gap-3 rounded-xl bg-muted px-4 py-3 text-xs leading-5 text-muted-foreground"><ShieldCheck size={15} className="mt-0.5 shrink-0 text-primary" /> {role === 'supervisor' ? 'Supervisor tools are restricted to centre operations.' : 'Your centre uses this ID to show only your bookings and queue updates.'}</div></div></div>
-  </div>;
+  const [error, setError] = useState('');
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setError('');
+
+    if (role === 'supervisor') {
+      window.sessionStorage.setItem('smartqueue-session', 'active');
+      window.sessionStorage.setItem('farmerconnect-role', role);
+      setLocation('/supervisor/dashboard');
+      return;
+    }
+
+    const cleanFarmerId = farmerId.trim().toUpperCase();
+
+    if (!cleanFarmerId) {
+      setError('Please enter your registered farmer ID.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/farmer/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          farmerId: cleanFarmerId,
+        }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          result?.message || 'That farmer ID is not registered or active.',
+        );
+      }
+
+      window.sessionStorage.setItem('smartqueue-session', 'active');
+      window.sessionStorage.setItem('farmerconnect-role', 'farmer');
+
+      if (result?.user?.name) {
+        window.sessionStorage.setItem('farmerconnect-name', result.user.name);
+      }
+
+      setLocation('/farmer/dashboard');
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : 'That farmer ID is not registered or active.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="grain grid min-h-[100dvh] bg-background lg:grid-cols-[.85fr_1.15fr]">
+      <div className="relative hidden overflow-hidden bg-sidebar p-10 text-sidebar-foreground lg:flex lg:flex-col lg:justify-between">
+        <div className="hero-grid absolute inset-0 opacity-60" />
+        <div className="relative">
+          <Logo dark />
+          <div className="mt-28 max-w-md">
+            <p className="text-[11px] font-bold uppercase tracking-[.18em] text-secondary">
+              A clearer day starts here
+            </p>
+            <h1 className="mt-4 font-display text-5xl font-bold leading-[1.05] tracking-[-.045em]">
+              Know your place. Keep your time.
+            </h1>
+            <p className="mt-6 text-base leading-7 text-sidebar-foreground/65">
+              Your booking, live queue, and payment status — together, in a
+              language that respects your day.
+            </p>
+          </div>
+        </div>
+
+        <div className="relative flex gap-3 text-xs text-sidebar-foreground/55">
+          <ShieldCheck size={16} className="text-secondary" />
+          Secure farmer access · Built for public procurement
+        </div>
+      </div>
+
+      <div className="flex flex-col px-5 py-6 sm:px-10 lg:px-20">
+        <div className="flex items-center justify-between lg:justify-end">
+          <div className="lg:hidden">
+            <Logo />
+          </div>
+          <Link
+            href="/"
+            className="text-sm font-semibold text-muted-foreground hover:text-foreground"
+            data-testid="link-auth-home"
+          >
+            Back to home
+          </Link>
+        </div>
+
+        <div className="mx-auto flex w-full max-w-[480px] flex-1 flex-col justify-center py-12">
+          <p className="text-[11px] font-bold uppercase tracking-[.18em] text-accent">
+            {role === 'supervisor'
+              ? 'Supervisor access'
+              : mode === 'login'
+                ? 'Welcome back'
+                : 'Farmer onboarding'}
+          </p>
+
+          <h1 className="mt-3 font-display text-4xl font-bold tracking-[-.04em]">
+            {role === 'supervisor'
+              ? 'Open the centre desk.'
+              : mode === 'login'
+                ? 'Sign in to your day.'
+                : 'Start with your farmer ID.'}
+          </h1>
+
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            {role === 'supervisor'
+              ? 'Monitor bookings, manage slots, and keep farmers informed.'
+              : mode === 'login'
+                ? 'Use your registered farmer ID to continue.'
+                : 'Enter your registered farmer details to continue.'}
+          </p>
+
+          <form className="mt-9 space-y-5" onSubmit={submit}>
+            {mode === 'register' && (
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold">
+                  Your name
+                </span>
+                <input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  required
+                  className="h-12 w-full rounded-xl border border-input bg-card px-4 text-sm outline-none ring-primary/20 transition focus:ring-4"
+                  placeholder="As on your farmer ID"
+                  data-testid="input-name"
+                />
+              </label>
+            )}
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold">
+                {role === 'supervisor' ? 'Supervisor ID' : 'Farmer ID'}
+              </span>
+              <input
+                value={farmerId}
+                onChange={(event) => setFarmerId(event.target.value)}
+                required
+                className="h-12 w-full rounded-xl border border-input bg-card px-4 font-mono text-sm uppercase outline-none ring-primary/20 transition focus:ring-4"
+                placeholder={
+                  role === 'supervisor'
+                    ? 'Your supervisor ID'
+                    : 'FRM-KAR-10001'
+                }
+                data-testid="input-farmer-id"
+              />
+            </label>
+
+            {mode === 'register' && (
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold">
+                  Preferred language
+                </span>
+                <select
+                  value={language}
+                  onChange={(event) => setLanguage(event.target.value)}
+                  className="h-12 w-full rounded-xl border border-input bg-card px-4 text-sm outline-none ring-primary/20 transition focus:ring-4"
+                  data-testid="select-language"
+                >
+                  <option>English</option>
+                  <option>ಕನ್ನಡ</option>
+                  <option>हिन्दी</option>
+                  <option>मराठी</option>
+                </select>
+              </label>
+            )}
+
+            {error && (
+              <div
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                role="alert"
+              >
+                {error}
+              </div>
+            )}
+
+            {role === 'farmer' && (
+              <div className="rounded-xl border border-dashed border-secondary/70 bg-secondary/10 px-4 py-3 text-xs leading-5 text-foreground/80">
+                Demo valid ID: <strong>FRM-KAR-10001</strong>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="h-12 w-full"
+              disabled={loading}
+              data-testid="button-auth-submit"
+            >
+              {loading ? (
+                <>
+                  <LoaderCircle className="animate-spin" size={17} />
+                  Checking farmer ID…
+                </>
+              ) : role === 'supervisor' ? (
+                'Open supervisor dashboard'
+              ) : (
+                'Continue to my overview'
+              )}
+              <ArrowRight size={16} />
+            </Button>
+          </form>
+
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            {role === 'supervisor'
+              ? 'Farmer access?'
+              : mode === 'login'
+                ? 'New to FarmerConnect?'
+                : 'Already have access?'}{' '}
+            <Link
+              href={
+                role === 'supervisor'
+                  ? '/login'
+                  : mode === 'login'
+                    ? '/register'
+                    : '/login'
+              }
+              className="font-bold text-primary hover:underline"
+              data-testid="link-auth-switch"
+            >
+              {role === 'supervisor'
+                ? 'Go to farmer login'
+                : mode === 'login'
+                  ? 'Register here'
+                  : 'Sign in instead'}
+            </Link>
+          </p>
+
+          {role !== 'supervisor' && mode === 'login' && (
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              Centre team?{' '}
+              <Link
+                href="/supervisor-login"
+                className="font-semibold text-primary hover:underline"
+                data-testid="link-supervisor-login"
+              >
+                Supervisor login
+              </Link>
+            </p>
+          )}
+
+          <div className="mt-10 flex items-start gap-3 rounded-xl bg-muted px-4 py-3 text-xs leading-5 text-muted-foreground">
+            <ShieldCheck size={15} className="mt-0.5 shrink-0 text-primary" />
+            {role === 'supervisor'
+              ? 'Supervisor tools are restricted to centre operations.'
+              : 'Only registered and verified farmer IDs can access the farmer dashboard.'}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function FarmerDashboard() {
